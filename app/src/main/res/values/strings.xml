@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">校园认证助手</string>
+    <string name="a11y_label">校园认证助手（自动填充）</string>
+    <string name="a11y_service_description">识别屏幕上出现的学校统一身份认证登录页，在你确认并通过指纹或锁屏密码验证后，自动填入账号密码。不联网，不读取、不上传任何数据；识别规则只匹配「用户名+密码」登录表单结构。</string>
+
+    <!-- 确认卡片 -->
+    <string name="gate_title">检测到登录页</string>
+    <string name="gate_message">是否使用账号 %1$s 的密码填充？</string>
+    <string name="gate_message_no_user">是否填充已保存的账号密码？</string>
+    <string name="gate_has_extra">该页面需要额外验证（验证码/短信等），将只填账号密码，后续步骤请手动完成。</string>
+    <string name="gate_fill">填充</string>
+    <string name="gate_cancel">取消</string>
+    <string name="gate_biometric_title">身份验证</string>
+    <string name="gate_biometric_subtitle">验证后填入校园账号密码</string>
+    <string name="gate_no_lock">系统未设置锁屏密码或指纹，无法解密凭据。请先在系统设置中配置。</string>
+
+    <!-- 主界面 -->
+    <string name="sec_status">服务状态</string>
+    <string name="status_running">工作中：正在监听登录页</string>
+    <string name="status_paused">已暂停：不检测、不弹窗（零开销）</string>
+    <string name="status_off">未开启无障碍服务</string>
+    <string name="btn_enable_service">去开启服务</string>
+    <string name="btn_pause">暂停监听</string>
+    <string name="btn_resume">恢复监听</string>
+
+    <string name="sec_credential">校园账号</string>
+    <string name="hint_username">学号 / 用户名</string>
+    <string name="hint_password">密码（加密保存在本机）</string>
+    <string name="btn_save">加密保存</string>
+    <string name="btn_delete">删除凭据</string>
+    <string name="btn_test_read">读取测试</string>
+
+    <string name="sec_setup">首次使用设置（ColorOS 必做）</string>
+    <string name="sec_selftest">自测</string>
+    <string name="btn_selftest">打开模拟登录页自测</string>
+
+    <string name="checklist_restricted_title">① 允许受限制的设置（最先做）</string>
+    <string name="checklist_restricted_desc">点「去设置」到应用详情页后：点右上角 ⋮ → 允许受限制的设置。不做这步，无障碍开关会打不开或被系统自动关闭。</string>
+    <string name="checklist_autostart_title">② 允许自启动</string>
+    <string name="checklist_autostart_desc">ColorOS 无公开直达入口：请到 设置 → 顶部搜索「自启动」→ 找到本应用 → 允许。防止重启后服务失效。</string>
+    <string name="checklist_battery_title">③ 后台运行不受限</string>
+    <string name="checklist_battery_desc">点「去设置」到应用详情页后：点「耗电管理」→ 选允许后台运行 / 不限制。否则服务会被系统杀掉。</string>
+    <string name="checklist_lock_title">④ 锁定后台卡片</string>
+    <string name="checklist_lock_desc">最近任务里把本应用卡片下拉锁定，防止一键清理误杀。</string>
+    <string name="checklist_a11y_title">⑤ 开启无障碍服务</string>
+    <string name="checklist_a11y_desc">在无障碍设置里找到「校园认证助手（自动填充）」并开启。</string>
+    <string name="checklist_overlay_title">⑥ 显示在其他应用上层（弹窗命门）</string>
+    <string name="checklist_overlay_desc">⚠️ ColorOS 禁止后台弹窗，悬浮窗是唯一豁免通道——不开则「是否填充」弹窗永远弹不出来。点「去设置」→ 允许。</string>
+    <string name="checklist_notify_title">⑦ 通知权限</string>
+    <string name="checklist_notify_desc">点「去设置」→ 允许通知。用于状态提示和异常兜底。</string>
+
+    <string name="btn_go_settings">去设置</string>
+    <string name="saved_ok">已加密保存</string>
+    <string name="saved_fail">保存失败：%1$s</string>
+    <string name="deleted_ok">凭据已删除</string>
+    <string name="read_ok">读取成功：账号 %1$s（密码已验证可解密，不会显示）</string>
+    <string name="read_none">尚未保存凭据</string>
+    <string name="read_fail">解密失败：%1$s（若更换过锁屏凭据，需重新保存）</string>
+    <string name="input_required">请先填写账号和密码</string>
+    <string name="fill_done">已自动填入账号密码</string>
+    <string name="fill_failed">自动填入失败，请点输入框手动填写</string>
+    <string name="privacy_note">零网络权限 · 密码用 Android Keystore 加密（每次填充都需指纹/锁屏验证后才解密）· 用户名加密存储仅供确认框展示</string>
+</resources>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 盾牌+钥匙孔 前景图（自适应图标 108dp 画布，内容居中 72dp 安全区） -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- 盾牌 -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M54,28 L74,36 L74,54 C74,66 65,74.5 54,78.5 C43,74.5 34,66 34,54 L34,36 Z" />
+    <!-- 钥匙孔 -->
+    <path
+        android:fillColor="#FF1565C0"
+        android:pathData="M54,44 A5.5,5.5 0 1 1 53.99,44 Z" />
+    <path
+        android:fillColor="#FF1565C0"
+        android:pathData="M50.5,53 L57.5,53 L56,64 L52,64 Z" />
+</vector>

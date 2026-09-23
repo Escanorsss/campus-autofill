@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>自测 A · 标准表单</title>
+<style>
+  body { font-family: sans-serif; background: #f2f4f7; margin: 0; padding: 24px; }
+  .card { background: #fff; border-radius: 12px; padding: 20px; }
+  h2 { margin: 0 0 4px; font-size: 18px; }
+  p.tip { color: #5f6368; font-size: 13px; }
+  label { display: block; margin-top: 12px; font-size: 14px; }
+  input { width: 100%; box-sizing: border-box; margin-top: 4px; padding: 10px;
+          border: 1px solid #ccc; border-radius: 8px; font-size: 15px; }
+  button { margin-top: 16px; width: 100%; padding: 12px; border: 0; border-radius: 8px;
+           background: #1565c0; color: #fff; font-size: 16px; }
+  #result { margin-top: 12px; color: #2e7d32; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h2>统一身份认证（模拟）</h2>
+  <p class="tip">变体 A：标准 username/password 命名。预期：弹确认框 → 指纹 → 填入；<b>不会</b>自动点登录。</p>
+  <form onsubmit="document.getElementById('result').textContent='你手动点了登录（工具不应代点）'; return false;">
+    <label>用户名
+      <input type="text" id="username" name="username" placeholder="请输入用户名" autocomplete="off">
+    </label>
+    <label>密码
+      <input type="password" id="password" name="password" placeholder="请输入密码" autocomplete="off">
+    </label>
+    <button type="submit">登录</button>
+    <div id="result"></div>
+  </form>
+</div>
+</body>
+</html>

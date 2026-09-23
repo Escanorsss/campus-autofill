@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  flagRetrieveInteractiveWindows : 能拿到全部窗口（验证弹窗盖在上面时也能找到表单窗口）
+  flagIncludeNotImportantViews   : WebView 内部节点常标记为 notImportant，需要包含
+  flagRequestEnhancedWebAccessibility : 关键！否则 WebView 只暴露当前聚焦的输入框
+  不设 packageNames：通用识别所有 App 里拉起的统一身份认证页（代码内排除自身/系统界面）
+-->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged|typeViewFocused|typeViewClicked|typeViewTextSelectionChanged|typeTouchInteractionStart"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagReportViewIds|flagRetrieveInteractiveWindows|flagIncludeNotImportantViews|flagRequestEnhancedWebAccessibility"
+    android:canRetrieveWindowContent="true"
+    android:canRequestEnhancedWebAccessibility="true"
+    android:description="@string/a11y_service_description"
+    android:notificationTimeout="100"
+    android:settingsActivity="com.mike.campusautofill.MainActivity" />
