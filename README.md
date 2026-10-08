@@ -70,4 +70,3 @@ JDK 17 + Android SDK（platform 36）；AGP 8.12.0 / Kotlin 2.1.20 / Gradle 9.3.
 - 只处理「用户名 + 密码」成对出现的表单；纯改密页等不触发
 - 换锁屏密码/指纹可能导致 Keystore 密钥失效 → 重新保存一次凭据即可
 - 鸿蒙 NEXT 不支持（安卓 APK）
-
