@@ -1,10 +1,10 @@
 package com.mike.campusautofill.service
 
 import android.content.ClipData
-import android.content.ClipDescription
 import android.content.ClipboardManager
 import android.content.Context
 import android.os.Bundle
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.PersistableBundle
@@ -46,7 +46,8 @@ object Filler {
         val clip = ClipData.newPlainText("fill", value)
         runCatching {
             clip.description.extras = PersistableBundle().apply {
-                putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true) // Android 13+ 不展示预览
+                // The key is also safe to attach on older systems that ignore it.
+                putBoolean("android.content.extra.IS_SENSITIVE", true) // Android 13+ 不展示预览
             }
         }
         cm.setPrimaryClip(clip)
@@ -56,7 +57,10 @@ object Filler {
         // ★ ACTION_PASTE 异步执行：延迟清剪贴板，给粘贴留出读取时间。
         // 收紧到 800ms，缩短剪贴板被占用的窗口（主路径 SET_TEXT 不经过剪贴板，此路径仅兜底）
         mainHandler.postDelayed({
-            runCatching { cm.clearPrimaryClip() }
+            runCatching {
+                if (Build.VERSION.SDK_INT >= 28) cm.clearPrimaryClip()
+                else cm.setPrimaryClip(ClipData.newPlainText("", ""))
+            }
         }, 800)
 
         sleep(250) // 等粘贴落盘

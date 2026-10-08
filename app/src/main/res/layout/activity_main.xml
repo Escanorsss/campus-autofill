@@ -21,6 +21,7 @@
         android:textStyle="bold" />
 
     <ScrollView
+        android:id="@+id/mainScroll"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
@@ -148,7 +149,7 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- ColorOS 设置清单 -->
+        <!-- 权限状态与设备设置引导 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -161,6 +162,14 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/sec_setup"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/deviceGuidance"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
                 android:textColor="@color/text_secondary"
                 android:textSize="13sp" />
 

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- 悬浮窗：ColorOS 拦截后台弹 Activity 时的兜底通道 -->
+    <!-- 部分厂商系统显示后台确认页时需要悬浮窗授权 -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-    <!-- 服务状态 / 提醒通知（Android 13+ 运行时申请） -->
+    <!-- 可选通知授权（Android 13+ 运行时申请；当前未启用通知保活） -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- 电池优化白名单申请入口 -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />

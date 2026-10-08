@@ -7,6 +7,7 @@ import android.view.WindowManager
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
@@ -69,15 +70,13 @@ class AuthGateActivity : AppCompatActivity() {
         }
 
         // 点卡片外/返回键 = 取消
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() = cancelByUser()
+        })
         findViewById<android.view.View>(R.id.root).setOnClickListener { cancelByUser() }
         findViewById<android.view.View>(R.id.card).setOnClickListener { /* 消费，不透传 */ }
         findViewById<Button>(R.id.btnCancel).setOnClickListener { cancelByUser() }
         findViewById<Button>(R.id.btnFill).setOnClickListener { startBiometric() }
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
-        cancelByUser()
     }
 
     private fun cancelByUser() {
