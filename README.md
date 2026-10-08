@@ -8,6 +8,10 @@
 - **零网络**：App 无 INTERNET 权限；密码用 Android Keystore AES-256-GCM 加密，验证通过后才在内存解密，明文永不落盘
 - **不动 OPPO 记忆密码**：走无障碍（AccessibilityService）路线，不注册系统自动填充服务
 
+## 下载安装
+
+[下载最新 APK](https://github.com/Escanorsss/campus-autofill/releases)：在 Assets 中选择 `.apk` 文件，下载后直接安装，无需编译。支持 Android 8.0 及以上；当前提供已签名的 Debug 预览版。
+
 ## 首次使用（App 内按设备展示权限状态和引导）
 
 1. 保存账号密码（先通过指纹 / 锁屏验证），开启「校园认证助手（自动填充）」无障碍服务。
@@ -66,3 +70,4 @@ JDK 17 + Android SDK（platform 36）；AGP 8.12.0 / Kotlin 2.1.20 / Gradle 9.3.
 - 只处理「用户名 + 密码」成对出现的表单；纯改密页等不触发
 - 换锁屏密码/指纹可能导致 Keystore 密钥失效 → 重新保存一次凭据即可
 - 鸿蒙 NEXT 不支持（安卓 APK）
+
