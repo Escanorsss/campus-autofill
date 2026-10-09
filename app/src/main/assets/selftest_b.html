@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>自测 B · 中文 label + 验证码</title>
+<title>含验证码</title>
+<meta name="color-scheme" content="light dark">
 <style>
   body { font-family: sans-serif; background: #f2f4f7; margin: 0; padding: 24px; }
   .card { background: #fff; border-radius: 12px; padding: 20px; }
@@ -20,14 +21,15 @@
              letter-spacing: 4px; color: #bf360c; }
   button { margin-top: 16px; width: 100%; padding: 12px; border: 0; border-radius: 8px;
            background: #1565c0; color: #fff; font-size: 16px; }
+  @media (prefers-color-scheme: dark) { body { background: #111318; color: #e2e2e9; } .card { background: #191c20; } p.tip { color: #c3c6d0; } input { background: #111318; color: #e2e2e9; border-color: #8d919a; } button { background: #a8c8ff; color: #003061; } }
   #result { margin-top: 12px; color: #2e7d32; font-size: 14px; }
 </style>
 </head>
 <body>
 <div class="card">
-  <h2>统一身份认证（模拟）</h2>
-  <p class="tip">变体 B：中文标签 + 图形验证码。预期：只填学号/密码，<b>不碰验证码、不点登录</b>，并显示"需手动完成"提示。</p>
-  <form onsubmit="document.getElementById('result').textContent='你手动点了登录（工具不应代点）'; return false;">
+  <h2>统一身份认证</h2>
+  <p class="tip">点输入框试试。验证码请手动填写。</p>
+  <form onsubmit="document.getElementById('result').textContent='测试完成'; return false;">
     <label>学号
       <input type="text" id="xh" name="studentId" placeholder="请输入学号" autocomplete="off">
     </label>

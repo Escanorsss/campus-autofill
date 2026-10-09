@@ -4,8 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.WindowManager
-import android.widget.Button
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
@@ -16,7 +14,13 @@ import com.mike.campusautofill.R
 import com.mike.campusautofill.service.FillCoordinator
 import com.mike.campusautofill.vault.CredentialVault
 import com.mike.campusautofill.diagnostics.DiagnosticLog
-import android.view.ViewTreeObserver
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import com.mike.campusautofill.ui.CampusTheme
+import com.mike.campusautofill.ui.FillConfirmation
 
 /**
  * 透明中转 Activity，两阶段：
@@ -47,9 +51,11 @@ class AuthGateActivity : AppCompatActivity() {
 
     private var sessionId: String? = null
     private var finished = false
+    private var biometricPending by mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         // 锁屏之上仍可显示（验证成功后需解密；用户刚通过认证，处于解锁状态，正常不会触顶）
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         sessionId = intent.getStringExtra(EXTRA_SESSION_ID)
@@ -58,43 +64,23 @@ class AuthGateActivity : AppCompatActivity() {
             finishQuietly()
             return
         }
-        setContentView(R.layout.activity_auth_gate)
         DiagnosticLog.i("Gate", "confirmation created validSession=true")
 
         val username = CredentialVault.loadUsername(this).orEmpty()
-        val msg = findViewById<TextView>(R.id.gateMessage)
-        msg.text = if (username.isNotEmpty()) {
-            getString(R.string.gate_message, username)
-        } else {
-            getString(R.string.gate_message_no_user)
-        }
-        if (intent.getBooleanExtra(EXTRA_HAS_EXTRA, false)) {
-            findViewById<TextView>(R.id.gateExtraHint).visibility = TextView.VISIBLE
+        val hasExtra = intent.getBooleanExtra(EXTRA_HAS_EXTRA, false)
+        val dynamic = getSharedPreferences("appearance", MODE_PRIVATE).getBoolean("dynamic_color", false)
+        setContent {
+            CampusTheme(dynamicColor = dynamic) {
+                FillConfirmation(username, hasExtra, biometricPending, ::cancelByUser, ::startBiometric) { width, height ->
+                    DiagnosticLog.i("Gate", "confirmation drawn width=$width height=$height messagePresent=true")
+                }
+            }
         }
 
         // 点卡片外/返回键 = 取消
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() = cancelByUser()
+            override fun handleOnBackPressed() { if (!biometricPending) cancelByUser() }
         })
-        findViewById<android.view.View>(R.id.root).setOnClickListener { cancelByUser() }
-        findViewById<android.view.View>(R.id.card).setOnClickListener { /* 消费，不透传 */ }
-        findViewById<Button>(R.id.btnCancel).setOnClickListener { cancelByUser() }
-        findViewById<Button>(R.id.btnFill).setOnClickListener { startBiometric() }
-        val card = findViewById<android.view.View>(R.id.card)
-        card.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
-            override fun onPreDraw(): Boolean {
-                card.viewTreeObserver.removeOnPreDrawListener(this)
-                DiagnosticLog.i("Gate", "confirmation predraw width=${card.width} height=${card.height} " +
-                    "shown=${card.isShown} messagePresent=${msg.text.isNotEmpty()}")
-                return true
-            }
-        })
-        card.postDelayed({
-            if (!isFinishing && !isDestroyed) {
-                DiagnosticLog.i("Gate", "confirmation after 1500ms shown=${card.isShown} " +
-                    "width=${card.width} height=${card.height} focus=${hasWindowFocus()}")
-            }
-        }, 1500)
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -137,7 +123,8 @@ class AuthGateActivity : AppCompatActivity() {
 
     private fun startBiometric() {
         DiagnosticLog.i("Gate", "biometric requested")
-        findViewById<Button>(R.id.btnFill).isEnabled = false
+        if (biometricPending) return
+        biometricPending = true
         val authenticators =
             BiometricManager.Authenticators.BIOMETRIC_STRONG or
                 BiometricManager.Authenticators.DEVICE_CREDENTIAL

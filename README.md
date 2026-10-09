@@ -56,10 +56,18 @@ App 主界面 →「打开模拟登录页自测」→ 3 个变体：
 
 ## 构建
 
+当前 `codex/material-ui-preview` 分支提供独立新版，包名为 `com.mike.campusautofill.preview`，手机显示「校园认证助手·新版」。与原版并存，凭据、设置和无障碍权限各自独立。对比自动填充时，请只开启其中一个助手的无障碍，避免重复确认框。
+
 ```bash
-./gradlew :app:assembleDebug
-adb install -r app/build/outputs/apk/debug/app-debug.apk
+./gradlew :app:assemblePreviewDebug :app:lintPreviewDebug
+adb install app/build/outputs/apk/preview/debug/app-preview-debug.apk
 ```
+
+新版采用 Jetpack Compose + Material 3。首页集中显示填充状态和账号，权限、测试、日志归入设置；支持系统浅色/深色主题和可选壁纸配色。账号输入有可见标签与就地错误提示；密码草稿不写入实例状态，离开页面后清除。认证、加密、识别和日志沿用修复版。
+
+界面验证：OPPO / Android 16 上 7 项 instrumentation 测试通过，覆盖导航、空表单校验、四种服务状态、动态配色开关、浅色/深色/2 倍字号、确认框取消与会话释放，以及静态主题文字 4.5:1 / 控件边界 3:1 对比度。新版安装前后原版的版本、更新时间及无障碍授权一致。新版尚未录入真实凭据或开启无障碍，实际验证后的填充链路仍需单独测试。
+
+全局技能：`mobile-android-design`（wshobson/agents，46891e7e）与 `material3-theming`（QyperXit/android-skills，28bd9a94），已审阅 Markdown 内容并校验技能格式；后者补充了源文件缺少的 YAML 元信息。项目 AGENTS.md 保存简洁布局和文案约束。
 
 JDK 17 + Android SDK（platform 36）；AGP 8.12.0 / Kotlin 2.1.20 / Gradle 9.3.1。若迁移 SDK 目录，需同步更新未纳入 Git 的 `local.properties`。
 

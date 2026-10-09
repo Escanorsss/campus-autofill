@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- NoActionBar + 自绘标题：避免 targetSdk36 沉浸式下系统标题栏压住内容 -->
-    <style name="Theme.CampusAutofill" parent="Theme.AppCompat.Light.NoActionBar">
+    <style name="Theme.CampusAutofill" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="colorPrimary">@color/accent</item>
         <item name="colorPrimaryDark">@color/accent_dark</item>
         <item name="colorAccent">@color/accent</item>
@@ -10,7 +10,7 @@
     </style>
 
     <!-- 透明中转 Activity：确认卡片 + 指纹弹窗宿主 -->
-    <style name="Theme.CampusAuthGate" parent="Theme.AppCompat.Light.NoActionBar">
+    <style name="Theme.CampusAuthGate" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowIsTranslucent">true</item>
         <item name="android:windowNoTitle">true</item>

@@ -1,0 +1,5 @@
+<resources>
+    <string name="save_failed_short">保存失败，请重试</string>
+    <string name="verify_ok">密码可用</string>
+    <string name="verify_failed">密码不可用，请重新保存</string>
+</resources>

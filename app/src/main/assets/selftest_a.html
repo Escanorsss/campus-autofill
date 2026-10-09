@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>自测 A · 标准表单</title>
+<title>标准表单</title>
+<meta name="color-scheme" content="light dark">
 <style>
   body { font-family: sans-serif; background: #f2f4f7; margin: 0; padding: 24px; }
   .card { background: #fff; border-radius: 12px; padding: 20px; }
@@ -14,14 +15,15 @@
           border: 1px solid #ccc; border-radius: 8px; font-size: 15px; }
   button { margin-top: 16px; width: 100%; padding: 12px; border: 0; border-radius: 8px;
            background: #1565c0; color: #fff; font-size: 16px; }
+  @media (prefers-color-scheme: dark) { body { background: #111318; color: #e2e2e9; } .card { background: #191c20; } p.tip { color: #c3c6d0; } input { background: #111318; color: #e2e2e9; border-color: #8d919a; } button { background: #a8c8ff; color: #003061; } }
   #result { margin-top: 12px; color: #2e7d32; font-size: 14px; }
 </style>
 </head>
 <body>
 <div class="card">
-  <h2>统一身份认证（模拟）</h2>
-  <p class="tip">变体 A：标准 username/password 命名。预期：弹确认框 → 指纹 → 填入；<b>不会</b>自动点登录。</p>
-  <form onsubmit="document.getElementById('result').textContent='你手动点了登录（工具不应代点）'; return false;">
+  <h2>统一身份认证</h2>
+  <p class="tip">这是测试页。点输入框试试，登录仍需手动确认。</p>
+  <form onsubmit="document.getElementById('result').textContent='测试完成'; return false;">
     <label>用户名
       <input type="text" id="username" name="username" placeholder="请输入用户名" autocomplete="off">
     </label>

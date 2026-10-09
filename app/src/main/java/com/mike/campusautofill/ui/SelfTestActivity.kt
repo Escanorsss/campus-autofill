@@ -3,53 +3,53 @@ package com.mike.campusautofill.ui
 import android.annotation.SuppressLint
 import android.os.Bundle
 import android.webkit.WebView
-import android.widget.Button
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import com.mike.campusautofill.R
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import com.mike.campusautofill.service.FillAccessibilityService
 
-/**
- * 内置自测页：本地 HTML 模拟 3 种统一身份认证表单变体，脱离校园网即可验证整条链路。
- * 进入前 MainActivity 已打开 debugScanSelfPackage，允许服务扫描自身 WebView。
- */
+/** Local HTML remains a real WebView so accessibility recognition is exercised end to end. */
 class SelfTestActivity : AppCompatActivity() {
-
     @SuppressLint("SetJavaScriptEnabled")
+    @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_selftest)
-        val root = findViewById<android.view.View>(R.id.root)
-        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
-            val bars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars())
-            v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
-            insets
+        enableEdgeToEdge()
+        val dynamic = getSharedPreferences("appearance", MODE_PRIVATE).getBoolean("dynamic_color", false)
+        setContent {
+            CampusTheme(dynamicColor = dynamic) {
+                var variant by rememberSaveable { mutableStateOf(0) }
+                val context = LocalContext.current
+                val web = remember(context) { WebView(context).apply { settings.javaScriptEnabled = true } }
+                DisposableEffect(web) { onDispose { web.stopLoading(); web.destroy() } }
+                Scaffold(topBar = {
+                    TopAppBar(title = { Text("测试填充") }, navigationIcon = {
+                        TextButton(onClick = { finish() }) { Text("返回") }
+                    })
+                }) { insets ->
+                    Column(Modifier.fillMaxSize().padding(insets).imePadding()) {
+                        FlowRow(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf("标准表单", "含验证码", "兼容表单").forEachIndexed { index, label ->
+                                FilterChip(selected = variant == index, onClick = { variant = index }, label = { Text(label) })
+                            }
+                        }
+                        AndroidView(factory = { web }, modifier = Modifier.fillMaxWidth().weight(1f), update = {
+                            val path = "file:///android_asset/selftest_${('a'.code + variant).toChar()}.html"
+                            if (it.url != path) it.loadUrl(path)
+                        })
+                    }
+                }
+            }
         }
-
-        val web = findViewById<WebView>(R.id.webview)
-        web.settings.javaScriptEnabled = true // 仅加载本地 assets，无外链
-
-        findViewById<Button>(R.id.btnVariantA).setOnClickListener {
-            web.loadUrl("file:///android_asset/selftest_a.html")
-        }
-        findViewById<Button>(R.id.btnVariantB).setOnClickListener {
-            web.loadUrl("file:///android_asset/selftest_b.html")
-        }
-        findViewById<Button>(R.id.btnVariantC).setOnClickListener {
-            web.loadUrl("file:///android_asset/selftest_c.html")
-        }
-
-        web.loadUrl("file:///android_asset/selftest_a.html")
     }
-
-    override fun onResume() {
-        super.onResume()
-        // 回到自测页（含验证弹窗关闭后）恢复扫描许可，保证 B/C 变体可继续测
-        FillAccessibilityService.debugScanSelfPackage = true
-    }
-
-    override fun onPause() {
-        // 离开自测页立即收回"扫描自身包名"的调试许可，避免误扫主界面的密码输入框
-        FillAccessibilityService.debugScanSelfPackage = false
-        super.onPause()
-    }
+    override fun onResume() { super.onResume(); FillAccessibilityService.debugScanSelfPackage = true }
+    override fun onPause() { FillAccessibilityService.debugScanSelfPackage = false; super.onPause() }
 }
