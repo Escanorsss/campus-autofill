@@ -1,7 +1,7 @@
 package com.mike.campusautofill.service
 
 import android.graphics.Rect
-import android.util.Log
+import com.mike.campusautofill.diagnostics.DiagnosticLog as Log
 import android.util.Pair
 import android.view.accessibility.AccessibilityNodeInfo
 
@@ -64,7 +64,7 @@ object FieldFinder {
             !isPasswordField(it) && !looksLikeUrlField(it)
         }
         if (userCandidates.isEmpty()) {
-            logReject("no user candidate (pass=${describe(passNode)})", editables)
+            logReject("no user candidate", editables)
             return null
         }
 
@@ -142,7 +142,7 @@ object FieldFinder {
     private fun describe(n: AccessibilityNodeInfo): String {
         val r = Rect(); n.getBoundsInScreen(r)
         return "cls=${n.className} pwd=${n.isPassword} it=${n.inputType} " +
-            "hint=${n.hintText} id=${n.viewIdResourceName} rect=${r.flattenToString()}"
+            "hasHint=${!n.hintText.isNullOrEmpty()} hasId=${n.viewIdResourceName != null} rect=${r.flattenToString()}"
     }
 
     fun isPasswordField(node: AccessibilityNodeInfo): Boolean {

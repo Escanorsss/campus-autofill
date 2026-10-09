@@ -15,6 +15,8 @@ import androidx.core.content.ContextCompat
 import com.mike.campusautofill.R
 import com.mike.campusautofill.service.FillCoordinator
 import com.mike.campusautofill.vault.CredentialVault
+import com.mike.campusautofill.diagnostics.DiagnosticLog
+import android.view.ViewTreeObserver
 
 /**
  * 透明中转 Activity，两阶段：
@@ -50,13 +52,14 @@ class AuthGateActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         // 锁屏之上仍可显示（验证成功后需解密；用户刚通过认证，处于解锁状态，正常不会触顶）
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        setContentView(R.layout.activity_auth_gate)
-
         sessionId = intent.getStringExtra(EXTRA_SESSION_ID)
         if (sessionId == null || FillCoordinator.get(sessionId!!) == null) {
+            DiagnosticLog.w("Gate", "missing/expired session restored=${savedInstanceState != null}")
             finishQuietly()
             return
         }
+        setContentView(R.layout.activity_auth_gate)
+        DiagnosticLog.i("Gate", "confirmation created validSession=true")
 
         val username = CredentialVault.loadUsername(this).orEmpty()
         val msg = findViewById<TextView>(R.id.gateMessage)
@@ -77,6 +80,26 @@ class AuthGateActivity : AppCompatActivity() {
         findViewById<android.view.View>(R.id.card).setOnClickListener { /* 消费，不透传 */ }
         findViewById<Button>(R.id.btnCancel).setOnClickListener { cancelByUser() }
         findViewById<Button>(R.id.btnFill).setOnClickListener { startBiometric() }
+        val card = findViewById<android.view.View>(R.id.card)
+        card.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
+            override fun onPreDraw(): Boolean {
+                card.viewTreeObserver.removeOnPreDrawListener(this)
+                DiagnosticLog.i("Gate", "confirmation predraw width=${card.width} height=${card.height} " +
+                    "shown=${card.isShown} messagePresent=${msg.text.isNotEmpty()}")
+                return true
+            }
+        })
+        card.postDelayed({
+            if (!isFinishing && !isDestroyed) {
+                DiagnosticLog.i("Gate", "confirmation after 1500ms shown=${card.isShown} " +
+                    "width=${card.width} height=${card.height} focus=${hasWindowFocus()}")
+            }
+        }, 1500)
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        DiagnosticLog.i("Gate", "window focus=$hasFocus")
     }
 
     private fun cancelByUser() {
@@ -102,7 +125,7 @@ class AuthGateActivity : AppCompatActivity() {
             finished = true
             val session = FillCoordinator.get(id)
             if (session != null) {
-                android.util.Log.w("CampusAutofill", "gate destroyed with open session, releasing $id")
+                com.mike.campusautofill.diagnostics.DiagnosticLog.w("CampusAutofill", "gate destroyed with open session, releasing $id")
                 FillCoordinator.callback?.onAuthCancelled(session, byUser = false)
                 FillCoordinator.complete(id)
             }
@@ -113,6 +136,8 @@ class AuthGateActivity : AppCompatActivity() {
     // ── 阶段②：BiometricPrompt ────────────────────────────────────────────
 
     private fun startBiometric() {
+        DiagnosticLog.i("Gate", "biometric requested")
+        findViewById<Button>(R.id.btnFill).isEnabled = false
         val authenticators =
             BiometricManager.Authenticators.BIOMETRIC_STRONG or
                 BiometricManager.Authenticators.DEVICE_CREDENTIAL
@@ -140,6 +165,7 @@ class AuthGateActivity : AppCompatActivity() {
                 }
 
                 override fun onAuthenticationError(code: Int, msg: CharSequence) {
+                    DiagnosticLog.w("Gate", "biometric error code=$code")
                     // USER_CANCELED / CANCELED / NEGATIVE → 视为用户取消；其余为系统错误，不记录"不再弹"
                     val byUser = code == BiometricPrompt.ERROR_USER_CANCELED ||
                         code == BiometricPrompt.ERROR_CANCELED ||
@@ -155,6 +181,7 @@ class AuthGateActivity : AppCompatActivity() {
                 }
 
                 override fun onAuthenticationFailed() {
+                    DiagnosticLog.i("Gate", "biometric mismatch")
                     // 指纹不匹配：提示框仍停留，允许重试，无需处理
                 }
             }
@@ -166,7 +193,7 @@ class AuthGateActivity : AppCompatActivity() {
         val id = sessionId ?: return finishQuietly()
         val session = FillCoordinator.get(id)
         if (session == null || finished) {
-            android.util.Log.w("CampusAutofill", "gate success but session gone/finished (session=$session finished=$finished)")
+            DiagnosticLog.w("Gate", "success but session missing=${session == null} finished=$finished")
             finish()
             return
         }
@@ -175,11 +202,11 @@ class AuthGateActivity : AppCompatActivity() {
         val credsUser = CredentialVault.loadUsername(this).orEmpty()
         val credsPass = CredentialVault.loadPassword(this)
         if (credsPass == null) {
-            android.util.Log.e("CampusAutofill", "gate: loadPassword failed after biometric")
+            com.mike.campusautofill.diagnostics.DiagnosticLog.e("CampusAutofill", "gate: loadPassword failed after biometric")
             Toast.makeText(this, getString(R.string.read_fail, ""), Toast.LENGTH_LONG).show()
             FillCoordinator.callback?.onAuthCancelled(session, byUser = false)
         } else {
-            android.util.Log.i("CampusAutofill", "gate: creds loaded, dispatching fill")
+            com.mike.campusautofill.diagnostics.DiagnosticLog.i("CampusAutofill", "gate: creds loaded, dispatching fill")
             FillCoordinator.callback?.onAuthSuccess(session, credsUser, credsPass)
         }
         FillCoordinator.complete(id)

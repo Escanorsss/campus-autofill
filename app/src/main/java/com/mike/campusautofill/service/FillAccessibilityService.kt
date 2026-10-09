@@ -1,10 +1,11 @@
 package com.mike.campusautofill.service
 
 import android.accessibilityservice.AccessibilityService
+import android.content.Intent
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
-import android.util.Log
+import com.mike.campusautofill.diagnostics.DiagnosticLog as Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.Toast
@@ -49,6 +50,12 @@ class FillAccessibilityService : AccessibilityService(), FillCoordinator.Callbac
     }
 
     private val mainHandler = Handler(Looper.getMainLooper())
+    private val healthCheck = object : Runnable {
+        override fun run() {
+            Log.snapshot("service heartbeat")
+            mainHandler.postDelayed(this, 60_000)
+        }
+    }
     private val scanExecutor = Executors.newSingleThreadExecutor()
     private var pendingScan: Runnable? = null
 
@@ -70,6 +77,7 @@ class FillAccessibilityService : AccessibilityService(), FillCoordinator.Callbac
     @Volatile private var lastIntentSourceEditable = false
 
     override fun onServiceConnected() {
+        super.onServiceConnected()
         instance = this
         FillCoordinator.callback = this
         UserSettings.load(this) // 服务被系统单独拉起时也要恢复暂停开关
@@ -77,21 +85,36 @@ class FillAccessibilityService : AccessibilityService(), FillCoordinator.Callbac
             ?.substringBefore('/')
             .orEmpty()
         Log.i(TAG, "service connected")
+        mainHandler.removeCallbacks(healthCheck)
+        mainHandler.post(healthCheck)
     }
 
-    override fun onDestroy() {
+    override fun onUnbind(intent: Intent?): Boolean {
+        Log.i(TAG, "service unbound")
+        detach()
+        return super.onUnbind(intent)
+    }
+
+    private fun detach() {
+        mainHandler.removeCallbacks(healthCheck)
+        pendingScan?.let { mainHandler.removeCallbacks(it) }
+        pendingScan = null
         if (instance === this) {
             instance = null
             FillCoordinator.callback = null
             FillCoordinator.clearAll()
             sessionForms.clear()
         }
-        pendingScan?.let { mainHandler.removeCallbacks(it) }
+    }
+
+    override fun onDestroy() {
+        Log.i(TAG, "service destroyed")
+        detach()
         scanExecutor.shutdown()
         super.onDestroy()
     }
 
-    override fun onInterrupt() {}
+    override fun onInterrupt() { Log.i(TAG, "service interrupted (not an unbind)") }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
         // 廉价过滤①：暂停开关 = 真零开销
@@ -116,6 +139,9 @@ class FillAccessibilityService : AccessibilityService(), FillCoordinator.Callbac
             pkg == inputMethodPackage
         ) return
 
+        Log.rate("event-$pkg-${event.eventType}", "pkg=$pkg type=${event.eventType} " +
+            "window=${event.windowId} sourceClass=${event.className}")
+
         when (event.eventType) {
             AccessibilityEvent.TYPE_VIEW_CLICKED,
             AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED,
@@ -137,7 +163,10 @@ class FillAccessibilityService : AccessibilityService(), FillCoordinator.Callbac
         val src = event.source
         val cls = src?.className?.toString().orEmpty()
         val editable = src != null && FieldFinder.isEditableField(src)
-        if (!editable) return
+        if (!editable) {
+            Log.rate("noneditable", "input signal ignored: source absent/noneditable type=${event.eventType} cls=$cls")
+            return
+        }
 
         val now = System.currentTimeMillis()
         val clicked = event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED
@@ -151,9 +180,10 @@ class FillAccessibilityService : AccessibilityService(), FillCoordinator.Callbac
             return
         }
         // 微信 X5 的窗口根节点是空的，但输入框事件节点可以向上找到完整 WebView 表单。
-        lastEventForm = if (event.packageName?.toString() == "com.tencent.mm") {
-            findFormFromEvent(src)
-        } else null
+        // Any embedded WebView may expose only its event ancestry, not a window root.
+        lastEventForm = findFormFromEvent(src)?.takeIf {
+            it.packageName == event.packageName?.toString()
+        }
         lastEventFormMs = now
         lastUserIntentMs = now
         lastIntentPackage = event.packageName?.toString()
@@ -202,10 +232,23 @@ class FillAccessibilityService : AccessibilityService(), FillCoordinator.Callbac
         pendingScan?.let { mainHandler.removeCallbacks(it) }
         val r = Runnable {
             pendingScan = null
-            scanExecutor.execute { runScan() }
+            executeSafely("scan") { runScan() }
         }
         pendingScan = r
         mainHandler.postDelayed(r, delayMs)
+    }
+
+    private fun executeSafely(operation: String, action: () -> Unit) {
+        try {
+            scanExecutor.execute {
+                try { action() } catch (e: Exception) {
+                    Log.e(TAG, "$operation failed", e)
+                    if (operation == "fill") showToast(R.string.fill_failed)
+                }
+            }
+        } catch (e: java.util.concurrent.RejectedExecutionException) {
+            Log.e(TAG, "$operation rejected after service shutdown", e)
+        }
     }
 
     /** 后台线程：全树遍历识别（多窗口，焦点窗口优先）。每条放弃路径都留日志。 */
@@ -267,6 +310,7 @@ class FillAccessibilityService : AccessibilityService(), FillCoordinator.Callbac
     private fun findFormInAnyWindow(targetPackage: String): FieldFinder.FormSnapshot? {
         val roots = ArrayList<AccessibilityNodeInfo>()
         val wins = windows?.sortedBy { if (it.isFocused) 0 else 1 } ?: emptyList()
+        Log.i(TAG, "scan windows=${wins.size} target=$targetPackage")
         for (w in wins) {
             w.root?.let { roots.add(it) }
         }
@@ -274,10 +318,12 @@ class FillAccessibilityService : AccessibilityService(), FillCoordinator.Callbac
 
         for (root in roots) {
             try {
+                if (root.packageName?.toString() != targetPackage) continue
+                Log.i(TAG, "scan root pkg=${root.packageName} children=${root.childCount} window=${root.windowId}")
                 val form = FieldFinder.findLoginForm(root)
                 if (form != null && form.packageName == targetPackage) return form
             } catch (e: Exception) {
-                Log.w(TAG, "scan failed: $e")
+                Log.e(TAG, "scan failed", e)
             } finally {
                 runCatching { root.recycle() }
             }
@@ -302,7 +348,7 @@ class FillAccessibilityService : AccessibilityService(), FillCoordinator.Callbac
 
     private fun triggerAuth(form: FieldFinder.FormSnapshot, now: Long) {
         lastTriggerMs = now
-        Log.i(TAG, "trigger auth pf=${form.fingerprint} extra=${form.hasExtraFields}")
+        Log.i(TAG, "trigger auth pkg=${form.packageName} window=${form.windowId} extra=${form.hasExtraFields}")
 
         val session = FillCoordinator.newSession(
             packageName = form.packageName,
@@ -318,7 +364,7 @@ class FillAccessibilityService : AccessibilityService(), FillCoordinator.Callbac
         try {
             startActivity(intent)
         } catch (e: Exception) {
-            Log.w(TAG, "startActivity blocked: $e")
+            Log.e(TAG, "startActivity blocked", e)
             FillCoordinator.complete(session.id)
             sessionForms.remove(session.id)
             showToast("检测到登录页，但无法弹窗，请到本应用内重试")
@@ -328,7 +374,7 @@ class FillAccessibilityService : AccessibilityService(), FillCoordinator.Callbac
     // ── FillCoordinator.Callback：验证结果回流 ────────────────────────────
 
     override fun onAuthSuccess(session: FillCoordinator.Session, username: String, password: String) {
-        scanExecutor.execute {
+        executeSafely("fill") {
             try {
                 performFill(session, username, password)
             } finally {
@@ -342,7 +388,7 @@ class FillAccessibilityService : AccessibilityService(), FillCoordinator.Callbac
         if (byUser) {
             // 用户明确取消 → 本页不再弹
             dismissed[session.fingerprint] = System.currentTimeMillis()
-            Log.i(TAG, "session cancelled by user, pf=${session.fingerprint}")
+            Log.i(TAG, "session cancelled by user pkg=${session.packageName}")
         }
         // 非用户原因（解密失败等）不记，允许再次询问
     }
@@ -364,9 +410,9 @@ class FillAccessibilityService : AccessibilityService(), FillCoordinator.Callbac
                         form = found
                         break
                     }
-                    Log.i(TAG, "fill retry $attempt: form not found yet (found=$found)")
+                    Log.i(TAG, "fill retry $attempt: form not found or wrong package")
                 } catch (e: Exception) {
-                    Log.w(TAG, "fill retry $attempt scan error: $e")
+                    Log.e(TAG, "fill retry $attempt scan error", e)
                 } finally {
                     runCatching { root.recycle() }
                 }
@@ -387,7 +433,7 @@ class FillAccessibilityService : AccessibilityService(), FillCoordinator.Callbac
             Log.i(TAG, "fill using refreshed input-event nodes")
         }
         if (resolved == null) {
-            Log.e(TAG, "fill aborted: login form not re-found after retries (session pf=${session.fingerprint})")
+            Log.e(TAG, "fill aborted: login form not re-found after retries pkg=${session.packageName}")
             showToast("未找到登录表单，未能填入")
             return
         }

@@ -80,6 +80,17 @@
                     android:text="@string/btn_pause"
                     android:textColor="@color/accent" />
             </LinearLayout>
+            <Button
+                android:id="@+id/btnDisableService"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/btn_disable_service" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/payment_note"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
         </LinearLayout>
 
         <!-- 凭据 -->
@@ -215,6 +226,17 @@
             android:text="@string/privacy_note"
             android:textColor="@color/text_secondary"
             android:textSize="12sp" />
+        <Button
+            android:id="@+id/btnExportLog"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/btn_export_log" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/diagnostics_note"
+            android:textColor="@color/text_secondary"
+            android:textSize="13sp" />
     </LinearLayout>
     </ScrollView>
 </LinearLayout>

@@ -1,7 +1,7 @@
 package com.mike.campusautofill.ui
 
 import android.os.Bundle
-import android.util.Log
+import com.mike.campusautofill.diagnostics.DiagnosticLog as Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.mike.campusautofill.service.FieldFinder
@@ -51,7 +51,7 @@ class DebugFillActivity : AppCompatActivity() {
             val form = try {
                 FieldFinder.findLoginForm(root)
             } catch (e: Exception) {
-                Log.w(TAG, "DEBUGFILL scan error: $e")
+                Log.e(TAG, "DEBUGFILL scan error", e)
                 null
             }
             if (form == null) continue
@@ -63,8 +63,9 @@ class DebugFillActivity : AppCompatActivity() {
             // 读回用户名框验证（密码框读不回）
             form.usernameNode.refresh()
             val readback = form.usernameNode.text?.toString() ?: "<null>"
-            Log.i(TAG, "DEBUGFILL user fill=${r1.ok}/${r1.method} pass fill=${r2.ok}/${r2.method} readback='$readback'")
-            return "user=${r1.method}:${r1.ok} pass=${r2.method}:${r2.ok} readback=$readback"
+            val matches = readback == "TESTUSER"
+            Log.i(TAG, "DEBUGFILL user fill=${r1.ok}/${r1.method} pass fill=${r2.ok}/${r2.method} testReadbackMatches=$matches")
+            return "user=${r1.method}:${r1.ok} pass=${r2.method}:${r2.ok} testReadbackMatches=$matches"
         }
         return "未找到登录表单 (pkg filter=$wantPkg)"
     }

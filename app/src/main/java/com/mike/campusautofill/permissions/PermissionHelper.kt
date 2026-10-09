@@ -16,6 +16,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.mike.campusautofill.R
 import com.mike.campusautofill.service.FillAccessibilityService
+import com.mike.campusautofill.diagnostics.DiagnosticLog
 
 object PermissionHelper {
     data class Status(
@@ -94,10 +95,13 @@ object PermissionHelper {
         for (intent in preferred.toList() + appDetails(activity) + Intent(Settings.ACTION_SETTINGS)) {
             try {
                 activity.startActivity(intent)
+                DiagnosticLog.i("Settings", "opened action=${intent.action}")
                 return
             } catch (_: ActivityNotFoundException) {
+                DiagnosticLog.w("Settings", "missing action=${intent.action}")
                 // Try the next standard entry point.
             } catch (_: SecurityException) {
+                DiagnosticLog.w("Settings", "denied action=${intent.action}")
                 // A vendor may protect even an otherwise resolvable settings page.
             }
         }

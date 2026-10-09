@@ -17,6 +17,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AlertDialog
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
@@ -27,6 +28,7 @@ import com.mike.campusautofill.permissions.PermissionHelper
 import com.mike.campusautofill.service.FillAccessibilityService
 import com.mike.campusautofill.settings.UserSettings
 import com.mike.campusautofill.vault.CredentialVault
+import com.mike.campusautofill.diagnostics.DiagnosticLog
 
 /**
  * 主界面：服务状态 + 凭据录入 + 按设备选择的权限清单 + 自测入口。
@@ -39,7 +41,33 @@ class MainActivity : AppCompatActivity() {
     private lateinit var editUsername: EditText
     private lateinit var editPassword: EditText
     private val statusHandler = Handler(Looper.getMainLooper())
-    private val refreshAfterBinding = Runnable { refreshStatus(); buildChecklist() }
+    private val refreshAfterBinding = object : Runnable {
+        override fun run() {
+            refreshStatus()
+            statusHandler.postDelayed(this, 1000)
+        }
+    }
+    private var lastStatus: PermissionHelper.Status? = null
+    private val exportLog = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("text/plain")
+    ) { uri ->
+        if (uri != null) {
+            val app = applicationContext
+            Thread {
+                val result = runCatching {
+                    DiagnosticLog.snapshot("export")
+                    val report = DiagnosticLog.report()
+                    val output = app.contentResolver.openOutputStream(uri, "wt")
+                        ?: error("No output stream")
+                    output.bufferedWriter().use { it.write(report) }
+                }
+                runOnUiThread {
+                    Toast.makeText(app, if (result.isSuccess) R.string.diagnostics_exported
+                        else R.string.diagnostics_failed, Toast.LENGTH_LONG).show()
+                }
+            }.start()
+        }
+    }
     private val notificationRequest = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -61,11 +89,21 @@ class MainActivity : AppCompatActivity() {
         editPassword = findViewById(R.id.editPassword)
 
         findViewById<Button>(R.id.btnEnableService).setOnClickListener {
-            PermissionHelper.openAccessibility(this)
+            manageAccessibility()
         }
         btnPause.setOnClickListener {
             UserSettings.setPaused(this, !UserSettings.isPaused)
+            DiagnosticLog.snapshot("pause changed")
             refreshStatus()
+        }
+        findViewById<Button>(R.id.btnDisableService).setOnClickListener {
+            FillAccessibilityService.instance?.disableSelf()
+                ?: PermissionHelper.openAccessibility(this)
+            DiagnosticLog.snapshot("disable requested")
+            refreshStatus()
+        }
+        findViewById<Button>(R.id.btnExportLog).setOnClickListener {
+            exportLog.launch("campus-diagnostics-${System.currentTimeMillis()}.txt")
         }
 
         findViewById<Button>(R.id.btnSave).setOnClickListener { onSave() }
@@ -82,6 +120,7 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         refreshStatus()
         buildChecklist()
+        DiagnosticLog.snapshot("main resumed")
         // Returning from Settings may precede the accessibility service binding.
         statusHandler.postDelayed(refreshAfterBinding, 750)
     }
@@ -105,6 +144,18 @@ class MainActivity : AppCompatActivity() {
 
     private fun refreshStatus() {
         val permissions = PermissionHelper.status(this)
+        if (lastStatus != permissions) {
+            DiagnosticLog.snapshot("permissions changed")
+            lastStatus = permissions
+            buildChecklist()
+        }
+        findViewById<Button>(R.id.btnEnableService).setText(when {
+            !permissions.accessibilityEnabled -> R.string.btn_enable_service
+            !permissions.serviceConnected -> R.string.btn_reconnect_service
+            else -> R.string.btn_manage_settings
+        })
+        findViewById<Button>(R.id.btnDisableService).visibility =
+            if (permissions.accessibilityEnabled) View.VISIBLE else View.GONE
         val paused = UserSettings.isPaused
         when {
             !permissions.accessibilityEnabled -> {
@@ -130,6 +181,20 @@ class MainActivity : AppCompatActivity() {
                 btnPause.setText(R.string.btn_pause)
             }
         }
+    }
+
+    private fun manageAccessibility() {
+        val state = PermissionHelper.status(this)
+        if (state.accessibilityEnabled && !state.serviceConnected) {
+            DiagnosticLog.snapshot("reconnect guide")
+            AlertDialog.Builder(this)
+                .setTitle(R.string.reconnect_title)
+                .setMessage(R.string.reconnect_message)
+                .setPositiveButton(R.string.btn_go_settings) { _, _ -> PermissionHelper.openAccessibility(this) }
+                .setNeutralButton(R.string.btn_background_settings) { _, _ -> PermissionHelper.openAppDetails(this) }
+                .setNegativeButton(android.R.string.cancel, null)
+                .show()
+        } else PermissionHelper.openAccessibility(this)
     }
 
     // ── 凭据（全部经 BiometricPrompt） ────────────────────────────────────
@@ -229,7 +294,7 @@ class MainActivity : AppCompatActivity() {
                 R.string.checklist_restricted_desc, null) { PermissionHelper.openAppDetails(this) }
         }
         items += Item(R.string.checklist_a11y_title, R.string.checklist_a11y_desc,
-            permissions.accessibilityEnabled) { PermissionHelper.openAccessibility(this) }
+            permissions.accessibilityEnabled) { manageAccessibility() }
         items += Item(R.string.checklist_overlay_title, R.string.checklist_overlay_desc,
             permissions.overlayGranted) { PermissionHelper.openOverlay(this) }
         items += Item(R.string.checklist_battery_title, R.string.checklist_battery_desc,

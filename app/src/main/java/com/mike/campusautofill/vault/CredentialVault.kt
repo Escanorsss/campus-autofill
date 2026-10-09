@@ -51,11 +51,11 @@ object CredentialVault {
                 return cipher.doFinal(ct).toString(Charsets.UTF_8)
             } catch (e: Exception) {
                 lastError = e
-                android.util.Log.w("CampusAutofill", "loadPassword attempt ${attempt + 1} failed: ${e.javaClass.simpleName}: ${e.message}")
+                com.mike.campusautofill.diagnostics.DiagnosticLog.e("CampusAutofill", "loadPassword attempt ${attempt + 1} failed", e)
                 try { Thread.sleep(150) } catch (ignored: InterruptedException) {}
             }
         }
-        android.util.Log.e("CampusAutofill", "loadPassword exhausted", lastError)
+        com.mike.campusautofill.diagnostics.DiagnosticLog.e("CampusAutofill", "loadPassword exhausted", lastError)
         return null
     }
 
