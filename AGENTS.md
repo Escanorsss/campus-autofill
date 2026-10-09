@@ -1,6 +1,7 @@
 # Android interface
 
 - Use the global mobile-android-design and material3-theming skills for Android UI, and clarify for copy.
+- Follow their system-font and vendor-component selection policy. Prefer usable vendor components, evaluate compatible community options honestly, then fall back to Google's official components. Keep any brand adaptation behind reusable UI components; never describe an approximation as an official OEM control.
 - Use native Jetpack Compose + Material 3 components. Keep the interface simple, with one primary action per screen and settings outside the home screen.
 - Use semantic theme colors, paired with their on-colors. Follow system light/dark mode; offer optional Android 12+ Dynamic Color with complete static fallbacks.
 - Use standard Material typography, system fonts, 48 dp minimum touch targets, and consistent 8/16/24 dp spacing. Support large font sizes, keyboard insets, and landscape.

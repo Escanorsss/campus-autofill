@@ -12,6 +12,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.core.graphics.ColorUtils
 import com.mike.campusautofill.MainActivity
 import com.mike.campusautofill.auth.AuthGateActivity
@@ -128,6 +132,33 @@ class CampusUiTest {
             assertTrue("Control outline contrast below 3:1",
                 ColorUtils.calculateContrast(scheme.outline.toArgb(), scheme.surface.toArgb()) >= 3)
         }
+    }
+
+    @Test fun allTypographyRolesResolveTheSystemFont() {
+        val t = SystemTypography
+        listOf(t.displayLarge, t.displayMedium, t.displaySmall, t.headlineLarge, t.headlineMedium,
+            t.headlineSmall, t.titleLarge, t.titleMedium, t.titleSmall, t.bodyLarge, t.bodyMedium,
+            t.bodySmall, t.labelLarge, t.labelMedium, t.labelSmall).forEach {
+            assertEquals(FontFamily.Default, it.fontFamily)
+        }
+    }
+
+    @Test fun reusablePasswordFieldMasksTogglesAndDisablesSafely() {
+        render {
+            CampusInputField("TEST-SECRET", {}, "密码", "请输入密码", "testPassword", true, false,
+                KeyboardOptions(keyboardType = KeyboardType.Password), password = true)
+        }
+        ui.onNodeWithTag("testPassword").assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Password))
+        ui.onNodeWithContentDescription("显示密码").performClick()
+        ui.onNodeWithTag("testPassword").assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Password))
+        ui.onNodeWithContentDescription("隐藏密码").performClick()
+        ui.onNodeWithTag("testPassword").assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Password))
+        render {
+            CampusInputField("TEST-SECRET", {}, "密码", "请输入密码", "testPassword", false, false,
+                KeyboardOptions(keyboardType = KeyboardType.Password), password = true)
+        }
+        ui.onNodeWithTag("togglePassword").assertIsNotEnabled()
+        ui.onNodeWithTag("testPassword").assertIsNotEnabled()
     }
 
     private fun render(dark: Boolean = false, scale: Float = 1f, content: @Composable () -> Unit) {

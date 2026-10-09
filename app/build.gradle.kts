@@ -12,8 +12,8 @@ android {
         applicationId = "com.mike.campusautofill"
         minSdk = 26
         targetSdk = 36
-        versionCode = 3
-        versionName = "0.2.0-preview"
+        versionCode = 4
+        versionName = "0.2.1-preview"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

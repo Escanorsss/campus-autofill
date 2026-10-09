@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -14,6 +15,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
@@ -130,21 +133,17 @@ private fun AccountEditor(
     username: String, password: String, userError: Boolean, passError: Boolean, busy: Boolean,
     onUsername: (String) -> Unit, onPassword: (String) -> Unit, onSave: () -> Unit
 ) {
-    var showPassword by remember { mutableStateOf(false) }
+    val focus = LocalFocusManager.current
     Column(Modifier.widthIn(max = 560.dp).fillMaxWidth().imePadding().verticalScroll(rememberScrollState())
         .padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        OutlinedTextField(value = username, onValueChange = onUsername, label = { Text("一卡通号") },
-            singleLine = true, enabled = !busy, isError = userError,
-            supportingText = if (userError) { { Text("请输入一卡通号") } } else null,
+        CampusInputField(value = username, onValueChange = onUsername, label = "一卡通号",
+            hint = "请输入一卡通号", tag = "username", enabled = !busy, error = userError,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
-            modifier = Modifier.fillMaxWidth().testTag("username"))
-        OutlinedTextField(value = password, onValueChange = onPassword, label = { Text("密码") },
-            singleLine = true, enabled = !busy, isError = passError,
-            supportingText = if (passError) { { Text("请输入密码") } } else null,
-            visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+            keyboardActions = KeyboardActions(onNext = { focus.moveFocus(FocusDirection.Down) }))
+        CampusInputField(value = password, onValueChange = onPassword, label = "密码",
+            hint = "请输入密码", tag = "password", enabled = !busy, error = passError, password = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
-            trailingIcon = { TextButton(onClick = { showPassword = !showPassword }) { Text(if (showPassword) "隐藏" else "显示") } },
-            modifier = Modifier.fillMaxWidth().testTag("password"))
+            keyboardActions = KeyboardActions(onDone = { focus.clearFocus(); onSave() }))
         Text("保存时验证身份，密码只留在本机。", style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         Button(onClick = onSave, enabled = !busy, modifier = Modifier.fillMaxWidth().testTag("saveAccount")) {

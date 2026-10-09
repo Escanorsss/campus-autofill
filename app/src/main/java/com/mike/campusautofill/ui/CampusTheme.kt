@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 
 // All component colors come from these semantic roles, never from literal colors.
@@ -39,6 +40,27 @@ internal val CampusDark = darkColorScheme(
     errorContainer = Color(0xFF93000A), onErrorContainer = Color(0xFFFFDAD6)
 )
 
+/** The system resolves this family, including OEM/user font replacement and script fallback. */
+internal val SystemTypography = Typography().let { base ->
+    Typography(
+        displayLarge = base.displayLarge.copy(fontFamily = FontFamily.Default),
+        displayMedium = base.displayMedium.copy(fontFamily = FontFamily.Default),
+        displaySmall = base.displaySmall.copy(fontFamily = FontFamily.Default),
+        headlineLarge = base.headlineLarge.copy(fontFamily = FontFamily.Default),
+        headlineMedium = base.headlineMedium.copy(fontFamily = FontFamily.Default),
+        headlineSmall = base.headlineSmall.copy(fontFamily = FontFamily.Default),
+        titleLarge = base.titleLarge.copy(fontFamily = FontFamily.Default),
+        titleMedium = base.titleMedium.copy(fontFamily = FontFamily.Default),
+        titleSmall = base.titleSmall.copy(fontFamily = FontFamily.Default),
+        bodyLarge = base.bodyLarge.copy(fontFamily = FontFamily.Default),
+        bodyMedium = base.bodyMedium.copy(fontFamily = FontFamily.Default),
+        bodySmall = base.bodySmall.copy(fontFamily = FontFamily.Default),
+        labelLarge = base.labelLarge.copy(fontFamily = FontFamily.Default),
+        labelMedium = base.labelMedium.copy(fontFamily = FontFamily.Default),
+        labelSmall = base.labelSmall.copy(fontFamily = FontFamily.Default)
+    )
+}
+
 @Composable
 fun CampusTheme(
     dynamicColor: Boolean = false,
@@ -52,7 +74,7 @@ fun CampusTheme(
         dark -> CampusDark
         else -> CampusLight
     }
-    MaterialTheme(colorScheme = colors, typography = Typography(), shapes = Shapes(
+    MaterialTheme(colorScheme = colors, typography = SystemTypography, shapes = Shapes(
         extraSmall = RoundedCornerShape(4.dp), small = RoundedCornerShape(8.dp),
         medium = RoundedCornerShape(12.dp), large = RoundedCornerShape(16.dp),
         extraLarge = RoundedCornerShape(28.dp)

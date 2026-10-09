@@ -69,6 +69,12 @@ adb install app/build/outputs/apk/preview/debug/app-preview-debug.apk
 
 全局技能：`mobile-android-design`（wshobson/agents，46891e7e）与 `material3-theming`（QyperXit/android-skills，28bd9a94），已审阅 Markdown 内容并校验技能格式；后者补充了源文件缺少的 YAML 元信息。项目 AGENTS.md 保存简洁布局和文案约束。
 
+0.2.1-preview：所有文字角色显式使用系统 `FontFamily.Default`，无内置或下载字体；账号与密码复用 Material 3 填充式输入组件，固定标签取代浮动描边，密码显隐使用 Google Material 图标，支持键盘下一项/完成和就地校验。
+
+厂商组件调研：COUI 是 ColorOS 风格的社区库，Miuix 是 HyperOS 风格的社区库，均非厂商官方 SDK。本次检查 COUI 1.0.0 / 1.1.0 的版本目录：Kotlin 2.4.10、Compose Multiplatform 1.11.1，与当前 Kotlin 2.1.20 / Compose 1.6.x 不匹配；为保持现有业务和工具链，本次采用 Google 官方组件作为兼容回退。当前实现没有加载手机厂商的系统控件，也不宣称自动获得 ColorOS / HyperOS 的完整外观。后续选型顺序与系统字体偏好保存在两个全局 skills 中，本次没有新增全局 AGENTS 记忆。
+
+验证（2026-10-10）：构建与 Lint 通过（0 errors，93 warnings）；Android 16 模拟器 9 项界面测试通过，新增全部字体角色为系统默认、密码掩码/显隐/禁用行为检查。手机已断开，0.2.1 未安装到真机，也未在 ColorOS 上重测；源码已推送预览分支，不发布 Release。
+
 JDK 17 + Android SDK（platform 36）；AGP 8.12.0 / Kotlin 2.1.20 / Gradle 9.3.1。若迁移 SDK 目录，需同步更新未纳入 Git 的 `local.properties`。
 
 权限适配验证（2026-10-08）：debug 构建和 Android Lint 通过（0 errors；仍有警告）；16 组设备识别用例通过，覆盖品牌回退、旧荣耀的 HUAWEI 厂商标识、未知品牌及土耳其语区域设置。OPPO / Android 16 / ColorOS 16.1 真机验证了无障碍、悬浮窗、电池豁免申请、应用详情、通知设置的入口；未自动改变系统授权。其他厂商目前仅完成代码及文档核对，尚未真机验证。另修正 Android 8 剪贴板清理兼容和确认页返回手势处理。
